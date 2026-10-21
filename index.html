@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Presentación del proyecto de mapa 3D de la E.E.S.T. N.º 1 de Pergamino.">
+  <title>Proyecto Mapa 3D | E.E.S.T. N.º 1</title>
+  <style>
+    :root {
+      --azul-oscuro: #102a43;
+      --azul: #176b87;
+      --celeste: #dff5fb;
+      --dorado: #c9a34b;
+      --blanco: #ffffff;
+      --texto: #243746;
+      --suave: #eef5f8;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: "Segoe UI", Arial, sans-serif;
+      color: var(--texto);
+      background: var(--blanco);
+      line-height: 1.6;
+    }
+
+    a { color: inherit; text-decoration: none; }
+
+    .barra {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+      padding: 12px clamp(18px, 5vw, 72px);
+      background: rgba(255,255,255,.94);
+      border-bottom: 1px solid #dbe6eb;
+      backdrop-filter: blur(12px);
+    }
+
+    .marca { display: flex; align-items: center; gap: 12px; min-width: 0; }
+    .marca img { width: 54px; height: 54px; object-fit: contain; }
+    .marca-texto { font-weight: 800; color: var(--azul-oscuro); line-height: 1.15; }
+    .marca-texto small { display: block; margin-top: 4px; font-size: .72rem; color: #59717f; font-weight: 600; }
+
+    nav { display: flex; flex-wrap: wrap; gap: 22px; align-items: center; }
+    nav a { font-size: .92rem; font-weight: 700; color: #385365; }
+    nav a:hover { color: var(--azul); }
+
+    .boton {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 9px;
+      padding: 12px 19px;
+      border: 0;
+      border-radius: 999px;
+      background: var(--dorado);
+      color: #172b3a;
+      font-weight: 800;
+      cursor: pointer;
+      transition: transform .2s, box-shadow .2s;
+    }
+    .boton:hover { transform: translateY(-2px); box-shadow: 0 8px 20px #c9a34b40; }
+    .boton-secundario { background: transparent; color: white; border: 1px solid #ffffff80; }
+
+    .hero {
+      position: relative;
+      overflow: hidden;
+      padding: clamp(58px, 8vw, 108px) clamp(20px, 7vw, 100px);
+      color: white;
+      background:
+        radial-gradient(circle at 85% 20%, #2f8fa7 0, transparent 28%),
+        linear-gradient(125deg, #102a43, #14516b 65%, #176b87);
+    }
+    .hero::after {
+      content: "";
+      position: absolute;
+      width: 430px; height: 430px;
+      right: -150px; bottom: -245px;
+      border: 1px solid #ffffff25; border-radius: 50%;
+      box-shadow: 0 0 0 35px #ffffff08, 0 0 0 70px #ffffff06;
+      pointer-events: none;
+    }
+    .hero-contenido { position: relative; z-index: 1; max-width: 850px; }
+    .etiqueta {
+      display: inline-block;
+      margin-bottom: 20px;
+      padding: 6px 13px;
+      border: 1px solid #e2c56d90;
+      border-radius: 999px;
+      color: #f4d98b;
+      font-size: .8rem;
+      font-weight: 800;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+    h1 { max-width: 800px; font-size: clamp(2.5rem, 6vw, 5.3rem); line-height: 1.02; letter-spacing: -.045em; }
+    h1 span { color: #f0d17b; }
+    .hero p { max-width: 670px; margin: 24px 0 30px; color: #e0edf4; font-size: clamp(1rem, 1.7vw, 1.2rem); }
+    .acciones { display: flex; flex-wrap: wrap; gap: 12px; }
+
+    .datos-rapidos {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      max-width: 760px;
+      gap: 12px;
+      margin-top: 46px;
+    }
+    .dato { padding: 15px 18px; border-left: 2px solid var(--dorado); background: #ffffff0b; }
+    .dato strong { display: block; color: white; font-size: 1rem; }
+    .dato span { color: #c8dce6; font-size: .83rem; }
+
+    section { padding: 78px clamp(20px, 7vw, 100px); }
+    .encabezado-seccion { max-width: 720px; margin-bottom: 30px; }
+    .sobrelinea { color: var(--azul); font-weight: 900; font-size: .78rem; letter-spacing: .15em; text-transform: uppercase; }
+    h2 { margin: 8px 0 12px; color: var(--azul-oscuro); font-size: clamp(1.9rem, 4vw, 3rem); line-height: 1.12; letter-spacing: -.025em; }
+    .encabezado-seccion p { color: #5b6f7c; }
+
+    .mapa-seccion { background: var(--suave); }
+    .mapa-panel {
+      display: grid;
+      grid-template-columns: minmax(0, 1.4fr) minmax(260px, .8fr);
+      overflow: hidden;
+      border: 1px solid #d8e5ea;
+      border-radius: 24px;
+      background: white;
+      box-shadow: 0 20px 55px #173b4b12;
+    }
+    .visor {
+      position: relative;
+      display: grid;
+      min-height: 400px;
+      place-items: center;
+      padding: 30px;
+      overflow: hidden;
+      background:
+        linear-gradient(30deg, transparent 48%, #9dc6d333 49%, #9dc6d333 50%, transparent 51%),
+        linear-gradient(120deg, transparent 48%, #9dc6d333 49%, #9dc6d333 50%, transparent 51%),
+        linear-gradient(#eaf7fa, #d8edf3);
+      background-size: 62px 62px, 62px 62px, auto;
+    }
+    .visor::before, .visor::after {
+      content: ""; position: absolute; border: 1px solid #8cb9c766; border-radius: 50%;
+      width: 380px; height: 180px; transform: rotate(-20deg);
+    }
+    .visor::after { width: 500px; height: 250px; }
+    .marcador { position: absolute; width: 12px; height: 12px; border-radius: 50%; background: var(--dorado); box-shadow: 0 0 0 7px #c9a34b30; }
+    .marcador.uno { top: 24%; left: 25%; }
+    .marcador.dos { top: 61%; right: 22%; }
+    .marcador.tres { bottom: 20%; left: 40%; }
+    .placeholder {
+      position: relative; z-index: 1; width: min(100%, 430px); padding: 34px 28px;
+      text-align: center; border: 1px dashed #6e9eaf; border-radius: 20px;
+      background: #ffffffd9; box-shadow: 0 12px 32px #24556a12;
+    }
+    .icono-mapa { font-size: 3rem; line-height: 1.2; }
+    .placeholder h3 { margin: 12px 0 8px; color: var(--azul-oscuro); font-size: 1.4rem; }
+    .placeholder p { color: #5c7480; font-size: .94rem; }
+    .estado { display: inline-block; margin-top: 17px; padding: 5px 10px; border-radius: 999px; background: #fff1c8; color: #735516; font-size: .76rem; font-weight: 800; }
+    .mapa-info { padding: clamp(25px, 4vw, 42px); align-self: center; }
+    .mapa-info h3 { color: var(--azul-oscuro); font-size: 1.35rem; margin-bottom: 10px; }
+    .mapa-info p { color: #5b6f7c; margin-bottom: 18px; }
+    .lista { list-style: none; display: grid; gap: 12px; margin: 20px 0 26px; }
+    .lista li { display: flex; gap: 10px; align-items: flex-start; color: #3b5564; }
+    .lista li span { color: var(--azul); font-weight: 900; }
+
+    .tarjetas { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+    .tarjeta { padding: 26px; border: 1px solid #e0e9ed; border-radius: 18px; background: white; }
+    .tarjeta .numero { display: grid; width: 42px; height: 42px; place-items: center; border-radius: 12px; background: var(--celeste); color: var(--azul); font-weight: 900; }
+    .tarjeta h3 { margin: 17px 0 8px; color: var(--azul-oscuro); }
+    .tarjeta p { color: #5b6f7c; font-size: .95rem; }
+
+    .objetivo { display: grid; grid-template-columns: .7fr 1.3fr; gap: 40px; align-items: center; }
+    .logo-grande { display: grid; place-items: center; padding: 24px; border: 1px solid #e4e9ec; border-radius: 24px; background: #fff; }
+    .logo-grande img { display: block; width: min(100%, 310px); height: auto; }
+    .objetivo-texto p { margin: 14px 0; color: #5b6f7c; }
+    .nota { padding: 16px 18px; border-left: 4px solid var(--dorado); border-radius: 0 12px 12px 0; background: #fff8e5; color: #6a5625; }
+
+    .cierre { text-align: center; color: white; background: linear-gradient(120deg, #102a43, #176b87); }
+    .cierre h2 { color: white; }
+    .cierre p { max-width: 650px; margin: 0 auto 25px; color: #dceaf0; }
+
+    footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px; padding: 22px clamp(20px, 7vw, 100px); color: #627782; background: #f5f8fa; font-size: .86rem; }
+    footer strong { color: var(--azul-oscuro); }
+
+    @media (max-width: 800px) {
+      .barra { align-items: flex-start; flex-direction: column; gap: 12px; }
+      nav { gap: 14px; }
+      .mapa-panel, .objetivo { grid-template-columns: 1fr; }
+      .visor { min-height: 340px; }
+      .tarjetas { grid-template-columns: 1fr; }
+      .logo-grande img { width: min(70%, 260px); }
+    }
+    @media (max-width: 480px) {
+      .datos-rapidos { grid-template-columns: 1fr; }
+      .acciones .boton { width: 100%; }
+      .visor { padding: 18px; min-height: 310px; }
+      .placeholder { padding: 24px 18px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="barra">
+    <a class="marca" href="#inicio" aria-label="Inicio del proyecto">
+      <img src="logo-escuela.png" alt="Logo de la E.E.S.T. N.º 1 de Pergamino">
+      <span class="marca-texto">PROYECTO MAPA 3D<small>E.E.S.T. N.º 1 · PERGAMINO</small></span>
+    </a>
+    <nav aria-label="Navegación principal">
+      <a href="#proyecto">Proyecto</a>
+      <a href="#mapa">Vista 3D</a>
+      <a href="#objetivos">Objetivos</a>
+    </nav>
+  </div>
+
+  <header class="hero" id="inicio">
+    <div class="hero-contenido">
+      <span class="etiqueta">Proyecto en desarrollo</span>
+      <h1>Una forma nueva de <span>recorrer</span> nuestro espacio.</h1>
+      <p>La idea del proyecto es armar un mapa en 3D para conocer mejor el lugar, verlo desde distintos lados y recorrerlo de manera sencilla.</p>
+      <div class="acciones">
+        <a class="boton" href="#mapa">Ver la propuesta <span aria-hidden="true">↘</span></a>
+        <a class="boton boton-secundario" href="#proyecto">Conocer la idea</a>
+                    <a class="btn btn-primary" href="https://eest1.edu.ar/" target="_blank" rel="noopener noreferrer">Ir a la página de la escuela</a>
+      </div>
+      <div class="datos-rapidos">
+        <div class="dato"><strong>Vista en 3D</strong><span>Ver el lugar en 3D</span></div>
+        <div class="dato"><strong>Interacción</strong><span>Pensado para recorrer</span></div>
+        <div class="dato"><strong>En desarrollo</strong><span>Diseño pendiente</span></div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section id="proyecto">
+      <div class="encabezado-seccion">
+        <span class="sobrelinea">La idea del proyecto</span>
+        <h2>¿De qué se trata el proyecto?</h2>
+        <p>Queremos crear un mapa en 3D que permita conocer un lugar y verlo desde distintos ángulos. Esta página muestra la idea inicial; el mapa final todavía no está hecho.</p>
+      </div>
+      <div class="tarjetas">
+        <article class="tarjeta">
+          <span class="numero">01</span>
+          <h3>Mostrar el lugar</h3>
+          <p>Representar el lugar en 3D para que sea más fácil entender cómo están distribuidos sus espacios.</p>
+        </article>
+        <article class="tarjeta">
+          <span class="numero">02</span>
+          <h3>Recorrer y elegir</h3>
+          <p>La idea es que más adelante se pueda recorrer el mapa y elegir distintas zonas para verlas mejor.</p>
+        </article>
+        <article class="tarjeta">
+          <span class="numero">03</span>
+          <h3>Para distintos dispositivos</h3>
+          <p>La página estará preparada para usarse desde una computadora, una tablet o un celular.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="mapa-seccion" id="mapa">
+      <div class="encabezado-seccion">
+        <span class="sobrelinea">Vista del mapa</span>
+        <h2>Así se va a ver el mapa en 3D</h2>
+        <p>Acá vamos a poner el mapa cuando esté terminado.</p>
+      </div>
+      <div class="mapa-panel">
+        <div class="visor" role="img" aria-label="Área de ejemplo reservada para el futuro mapa 3D">
+          <span class="marcador uno"></span>
+          <span class="marcador dos"></span>
+          <span class="marcador tres"></span>
+          <div class="placeholder">
+            <div class="icono-mapa" aria-hidden="true">⌖</div>
+            <h3>El mapa 3D va acá</h3>
+            <p>En este espacio se va a agregar el mapa, los controles para moverse y los lugares importantes.</p>
+            <span class="estado">El mapa todavía no está hecho</span>
+          </div>
+        </div>
+        <aside class="mapa-info">
+          <h3>Todavía hay que armarlo</h3>
+          <p>Cuando el mapa esté listo, acá se van a poder ver sus detalles y las opciones para recorrerlo.</p>
+          <ul class="lista">
+            <li><span>✓</span><span>Ver el lugar en 3D</span></li>
+            <li><span>✓</span><span>Opciones para moverse y mirar</span></li>
+            <li><span>✓</span><span>Marcas con información útil</span></li>
+          </ul>
+          <button class="boton" id="infoBtn" type="button">Ver cómo va el proyecto</button>
+          <p id="estadoProyecto" aria-live="polite" hidden></p>
+        </aside>
+      </div>
+    </section>
+
+    <section id="objetivos">
+      <div class="objetivo">
+        <div class="logo-grande">
+          <img src="logo-escuela.png" alt="Emblema de los 100 años de la E.E.S.T. N.º 1 de Pergamino">
+        </div>
+        <div class="objetivo-texto">
+          <span class="sobrelinea">Institución</span>
+          <h2>Un proyecto de nuestra escuela</h2>
+          <p>Este proyecto es de la E.E.S.T. N.º 1 de Pergamino. Por eso, incluimos el logo de la escuela en la página.</p>
+          <p>Esta página es el punto de partida. Más adelante podemos agregar fotos, información del lugar, indicaciones y un mapa con el que se pueda interactuar.</p>
+          <div class="nota"><strong>Importante:</strong> por ahora, el espacio del mapa es solo un ejemplo. Todavía no hay un mapa 3D real.</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="cierre">
+      <span class="sobrelinea">Lo que sigue</span>
+      <h2>De la idea al mapa</h2>
+      <p>Lo próximo será decidir qué lugar vamos a mostrar, hacer el modelo en 3D y sumarlo a esta página.</p>
+      <a class="boton" href="#inicio">Volver al inicio ↑</a>
+    </section>
+  </main>
+
+  <footer>
+    <span><strong>Proyecto Mapa 3D</strong> · E.E.S.T. N.º 1 de Pergamino</span>
+    <span>Presentación inicial · Falta hacer el mapa 3D</span>
+  </footer>
+
+  <script>
+    // Este botón informa el estado actual sin necesitar un mapa diseñado.
+    const infoBtn = document.getElementById("infoBtn");
+    const estadoProyecto = document.getElementById("estadoProyecto");
+
+    infoBtn.addEventListener("click", function () {
+      estadoProyecto.hidden = false;
+      estadoProyecto.textContent = "Por ahora, la página de presentación está lista. Falta crear el mapa 3D y agregarlo.";
+    });
+  </script>
+</body>
+</html>
